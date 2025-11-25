@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import { EllipsisVertical } from "lucide-react";
 import { MessageCircleX } from "lucide-react";
+import Lottie from "lottie-react";
+import animationData from "../assets/Empty red.json";
 
 const Main = () => {
   const [time, setTime] = useState(new Date());
   const [task, setTask] = useState("");
   const [date, setDate] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(null);
+  const [editIndex, setEditIndex] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -19,12 +22,44 @@ const Main = () => {
 
   const handleAddTask = () => {
     if (task && date) {
-      setTasks([...tasks, { task, date }]);
+      if (editIndex !== null) {
+        // Edit existing task
+        const updatedTasks = [...tasks];
+        updatedTasks[editIndex] = { task, date, completed: false };
+        setTasks(updatedTasks);
+        setEditIndex(null);
+      } else {
+        // Add new task
+        setTasks([...tasks, { task, date, completed: false }]);
+      }
       setTask("");
       setDate("");
     }
-    console.log(tasks);
   };
+
+  const handleDeleteTask = (deleteIndex) => {
+    setTasks((prevtasks) =>
+      prevtasks.filter((task, index) => index !== deleteIndex)
+    );
+  };
+
+  const handleComplete = (index) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index].completed = !updatedTasks[index].completed;
+    setTasks(updatedTasks);
+    setIsDropdownOpen(null);
+  };
+
+  const handleEditTask = (index) => {
+    setTask(tasks[index].task);
+    setDate(tasks[index].date);
+    setEditIndex(index);
+    setIsDropdownOpen(null);
+  };
+
+  // Count completed tasks
+  const completedCount = tasks.filter((task) => task.completed).length;
+  const pendingCount = tasks.filter((task) => !task.completed).length;
 
   return (
     <>
@@ -49,10 +84,25 @@ const Main = () => {
 
             {/* Task Input Section */}
             <div className="flex flex-col gap-3">
+              {editIndex !== null && (
+                <div className="bg-blue-500/20 border border-blue-400/50 rounded-md px-3 py-2 flex items-center justify-between">
+                  <span className="text-sm text-blue-300">Editing Task...</span>
+                  <button
+                    onClick={() => {
+                      setEditIndex(null);
+                      setTask("");
+                      setDate("");
+                    }}
+                    className="text-blue-300 hover:text-white"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
               <input
                 type="text"
                 value={task}
-                onChange={(e) => setTask(e.target.value)}
+                onChange={(e) => setTask(e.target.value.toUpperCase())}
                 placeholder="What do you want to accomplish?"
                 className="border border-gray-600/50 rounded-md px-4 py-3 outline-none w-full bg-white/5 backdrop-blur-md shadow-lg text-gray-200 placeholder:text-gray-500 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 transition-all"
               />
@@ -70,9 +120,12 @@ const Main = () => {
                   className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 backdrop-blur-md shadow-lg border border-blue-400/30 transition-all duration-300 ease-in-out cursor-pointer hover:scale-105 active:scale-95 font-medium"
                 >
                   <Plus size={20} />
-                  <span>Add Task</span>
+                  <span>{editIndex !== null ? "Update Task" : "Add Task"}</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gradient-to-r from-red-600/80 to-red-500/80 hover:from-red-500 hover:to-red-400 backdrop-blur-md shadow-lg border border-red-400/30 transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 font-medium cursor-pointer">
+                <button
+                  onClick={() => setTasks([])}
+                  className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-gradient-to-r from-red-600/80 to-red-500/80 hover:from-red-500 hover:to-red-400 backdrop-blur-md shadow-lg border border-red-400/30 transition-all duration-300 ease-in-out hover:scale-105 active:scale-95 font-medium cursor-pointer"
+                >
                   <Trash2 size={20} />
                   <span>Clear All</span>
                 </button>
@@ -83,65 +136,96 @@ const Main = () => {
             <div className="flex gap-3 mt-4">
               <div className="flex-1 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-4 border border-green-500/20">
                 <p className="text-xs text-gray-400 mb-1">Completed</p>
-                <p className="text-2xl font-bold text-green-400">0</p>
+                <p className="text-2xl font-bold text-green-400">
+                  {completedCount}
+                </p>
               </div>
               <div className="flex-1 bg-gradient-to-br from-orange-500/10 to-yellow-500/10 rounded-lg p-4 border border-orange-500/20">
                 <p className="text-xs text-gray-400 mb-1">Pending</p>
-                <p className="text-2xl font-bold text-orange-400">0</p>
+                <p className="text-2xl font-bold text-orange-400">
+                  {pendingCount}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Second grid item - you can style this yourself */}
-          <div className="flex flex-col gap-4 bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-white/10 shadow-2xl">
+          {/* Second grid item - Task List */}
+          <div className="flex flex-col gap-4 bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-white/10 shadow-2xl relative">
             <h3 className="text-xl font-semibold text-gray-300">Your Tasks</h3>
             {/* Task List */}
             {tasks.length > 0 ? (
               tasks.map((task, index) => (
-                <ul key={index} className="grid grid-cols-3 gap-2">
-                  <li className="py-2">{task.task}</li>
-                  <li className="py-2">{task.date}</li>
-                  <div className="flex justify-between">
-                    <button className="bg-red-500/60 backdrop-blur-md border border-red-400/30 text-white flex items-center justify-center rounded-full w-10 h-10 py-1 px-1.5">
+                <ul
+                  key={index}
+                  className={`grid grid-cols-3 gap-2 border-b border-gray-600/50 pb-2 relative ${
+                    task.completed
+                      ? "bg-green-500/20 px-2 py-1 rounded-md border border-green-400/50"
+                      : ""
+                  }`}
+                >
+                  <li
+                    className={`py-2 ${
+                      task.completed ? "line-through text-green-300" : ""
+                    }`}
+                  >
+                    {task.task}
+                  </li>
+                  <li
+                    className={`py-2 ${
+                      task.completed ? "line-through text-green-300" : ""
+                    }`}
+                  >
+                    {task.date}
+                  </li>
+                  <div className="flex justify-between relative">
+                    <button
+                      onClick={() => handleDeleteTask(index)}
+                      className="bg-red-600 backdrop-blur-md border border-red-400/30 text-white flex items-center justify-center rounded-full w-10 h-10 py-1 px-1 hover:scale-110 active:scale-80 transition-all duration-300 ease-in-out cursor-pointer"
+                    >
                       <Trash2 size={30} />
                     </button>
-                    <button
-                      onClick={() =>
-                        setIsDropdownOpen(
-                          isDropdownOpen === index ? null : index
-                        )
-                      }
-                      className="bg-gray-400/10 backdrop-blur-md border border-gray-400/30 text-white flex items-center justify-center rounded-full w-10 h-10 relative"
-                    >
-                      {isDropdownOpen === index ? (
-                        <MessageCircleX size={30} />
-                      ) : (
-                        <EllipsisVertical size={30} />
-                      )}
+                    <div className="relative">
+                      <button
+                        onClick={() =>
+                          setIsDropdownOpen(
+                            isDropdownOpen === index ? null : index
+                          )
+                        }
+                        className="bg-gray-400/10 backdrop-blur-md border border-gray-400/30 text-white flex items-center justify-center rounded-full w-10 h-10 hover:scale-110 active:scale-80 transition-all duration-300 ease-in-out cursor-pointer"
+                      >
+                        {isDropdownOpen === index ? (
+                          <MessageCircleX size={30} />
+                        ) : (
+                          <EllipsisVertical size={30} />
+                        )}
+                      </button>
                       {isDropdownOpen === index && (
-                        <div className="absolute top-12 -right-6 flex flex-col bg-gray-800/90 backdrop-blur-md border border-gray-600/50 rounded-md p-2 gap-1 z-50">
-                          <a
-                            href=""
-                            className="hover:bg-gray-700/50 px-3 py-1 rounded"
+                        <div className="absolute top-12 right-0 flex flex-col bg-gray-800/90 backdrop-blur-md border border-gray-600/50 rounded-md p-2 gap-1 z-50 min-w-[120px]">
+                          <button
+                            onClick={() => handleComplete(index)}
+                            className="hover:bg-gray-700/50 px-3 py-1 rounded text-left whitespace-nowrap"
                           >
-                            Complete
-                          </a>
-                          <a
-                            href=""
-                            className="hover:bg-gray-700/50 px-3 py-1 rounded"
+                            {task.completed ? "Undo" : "Complete"}
+                          </button>
+                          <button
+                            onClick={() => handleEditTask(index)}
+                            className="hover:bg-gray-700/50 px-3 py-1 rounded text-left whitespace-nowrap"
                           >
                             Edit Task
-                          </a>
+                          </button>
                         </div>
                       )}
-                    </button>
+                    </div>
                   </div>
                 </ul>
               ))
             ) : (
-              <p className="text-gray-500 text-sm">
-                No tasks yet. Add your first task to get started!
-              </p>
+              <div>
+                <Lottie animationData={animationData} loop={true} />
+                <p className="text-gray-500 text-sm text-center">
+                  No tasks yet. Add your first task to get started!
+                </p>
+              </div>
             )}
           </div>
         </div>
