@@ -20,17 +20,35 @@ const Main = () => {
     return () => clearInterval(timer);
   });
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (task && date) {
+      let response, data;
+
       if (editIndex !== null) {
-        const updatedTasks = [...tasks];
-        updatedTasks[editIndex] = { task, date, completed: false };
-        setTasks(updatedTasks);
+        response = await fetch(
+          `http://localhost:5000/api/edit-task/${editIndex}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task, date }),
+          }
+        );
+        data = await response.json();
+
+        setTasks(tasks.map((t) => (t._id === editIndex ? data : t)));
         setEditIndex(null);
       } else {
         // Add new task
-        setTasks([...tasks, { task, date, completed: false }]);
+        response = await fetch("http://localhost:5000/api/add-task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task, date }),
+        });
+        data = await response.json();
+
+        setTasks([...tasks, data]);
       }
+
       setTask("");
       setDate("");
     }
@@ -49,10 +67,10 @@ const Main = () => {
     setIsDropdownOpen(null);
   };
 
-  const handleEditTask = (index) => {
-    setTask(tasks[index].task);
-    setDate(tasks[index].date);
-    setEditIndex(index);
+  const handleEditTask = (_id) => {
+    setTask(tasks[_id].task);
+    setDate(tasks[_id].date);
+    setEditIndex(task._id);
     setIsDropdownOpen(null);
   };
 
@@ -207,7 +225,7 @@ const Main = () => {
                             {task.completed ? "Undo" : "Complete"}
                           </button>
                           <button
-                            onClick={() => handleEditTask(index)}
+                            onClick={() => handleEditTask(task._id)}
                             className="hover:bg-gray-700/50 px-3 py-1 rounded text-left whitespace-nowrap"
                           >
                             Edit Task
