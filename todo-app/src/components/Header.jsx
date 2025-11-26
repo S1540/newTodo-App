@@ -1,8 +1,22 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Header = () => {
-  const navItems = ["Home", "About", "Contact"];
+  const navItems = [
+    {
+      name: "Home",
+      link: "/",
+    },
+    {
+      name: "Todo-AI",
+      link: "/aiAgent",
+    },
+    {
+      name: "Contact",
+      link: "/contact",
+    },
+  ];
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -12,13 +26,13 @@ const Header = () => {
         </div>
         <nav className="hidden sm:flex gap-5 text-lg">
           {navItems.map((item, index) => (
-            <a
+            <Link
               key={index}
-              href="#"
-              className="transition-all duration-300 ease-in-out hover:text-white font-medium text-white"
+              to={item.link}
+              className={`transition-all duration-300 ease-in-out hover:text-white font-medium text-white`}
             >
-              {item}
-            </a>
+              {item.name}
+            </Link>
           ))}
         </nav>
         {/* Mobile Menu Button */}
@@ -34,13 +48,14 @@ const Header = () => {
         <div className="sm:hidden absolute top-16 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 z-50">
           <nav className="flex flex-col gap-4 py-4 items-center">
             {navItems.map((item, index) => (
-              <a
+              <Link
                 key={index}
-                href="#"
-                className="text-white text-lg font-medium hover:text-gray-200 transition-all"
+                onClick={() => setIsOpen(false)}
+                to={item.link}
+                className={`text-white text-lg font-medium hover:text-gray-200 transition-all `}
               >
-                {item}
-              </a>
+                {item.name}
+              </Link>
             ))}
           </nav>
         </div>

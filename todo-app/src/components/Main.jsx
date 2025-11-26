@@ -23,7 +23,6 @@ const Main = () => {
   const handleAddTask = () => {
     if (task && date) {
       if (editIndex !== null) {
-        // Edit existing task
         const updatedTasks = [...tasks];
         updatedTasks[editIndex] = { task, date, completed: false };
         setTasks(updatedTasks);
