@@ -32,8 +32,13 @@ router.put("/api/edit-task/:id", async (req, res) => {
   const id = req.params.id;
   const { task, date } = req.body;
   try {
-    const updatedTask = await Task.findByIdAndUpdate(id, { task, date });
-    res.json({ message: "Task updated successfully", updatedTask });
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      { task, date },
+      { new: true }
+    );
+    console.log({ updatedTask });
+    res.json(updatedTask);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Sparkles } from "lucide-react";
 import { EllipsisVertical } from "lucide-react";
 import { MessageCircleX } from "lucide-react";
 import Lottie from "lottie-react";
@@ -12,6 +12,7 @@ const Main = () => {
   const [tasks, setTasks] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
+  const [editID, setEditID] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -24,9 +25,9 @@ const Main = () => {
     if (task && date) {
       let response, data;
 
-      if (editIndex !== null) {
+      if (editID !== null) {
         response = await fetch(
-          `http://localhost:5000/api/edit-task/${editIndex}`,
+          `http://localhost:5000/api/edit-task/${editID}`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -34,9 +35,10 @@ const Main = () => {
           }
         );
         data = await response.json();
+        console.log(data);
 
-        setTasks(tasks.map((t) => (t._id === editIndex ? data : t)));
-        setEditIndex(null);
+        setTasks(tasks.map((t) => (t._id === editID ? data : t)));
+        setEditID(null);
       } else {
         // Add new task
         response = await fetch("http://localhost:5000/api/add-task", {
@@ -67,10 +69,11 @@ const Main = () => {
     setIsDropdownOpen(null);
   };
 
-  const handleEditTask = (_id) => {
-    setTask(tasks[_id].task);
-    setDate(tasks[_id].date);
-    setEditIndex(task._id);
+  const handleEditTask = (task, index) => {
+    setTask(task.task);
+    setDate(task.date);
+    setEditIndex(index);
+    setEditID(task._id);
     setIsDropdownOpen(null);
   };
 
@@ -83,9 +86,23 @@ const Main = () => {
       <section className="bg-gradient-to-br from-zinc-900 via-gray-900 to-zinc-800 min-h-screen pt-8 sm:pt-16 text-white px-4">
         {/* Task Section */}
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 sm:mt-5">
-          <div className="flex flex-col gap-4 bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-white/10 shadow-2xl">
+          {/* Logo */}
+
+          <div className="flex flex-col gap-4 bg-white/5 backdrop-blur-lg rounded-lg p-6 border border-white/10 shadow-2xl relative">
+            <div className="mb-4 sm:mb-6 text-center flex-shrink-0 fixed left-0 right-0 top-0 z-40 bg-gradient-to-r from-zinc-800 via-gray-900 to-zinc-800 rounded-tl-lg rounded-tr-lg border-b border-gray-500">
+              <div className="flex items-center justify-center gap-2 sm:gap-3 mb-1 sm:mb-2 ">
+                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400" />
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
+                  Todo App
+                </h1>
+              </div>
+              <p className="text-gray-400 text-xs sm:text-sm">
+                Your intelligent task assistant
+              </p>
+            </div>
+
             {/* Header with Time & Date */}
-            <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm rounded-md border border-white/20 shadow-lg">
+            <div className="flex justify-between items-center px-4 py-3 mt-14 lg:mt-18 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm rounded-md border border-white/20 shadow-lg ">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <h2 className="text-sm sm:text-base font-medium">
@@ -225,7 +242,7 @@ const Main = () => {
                             {task.completed ? "Undo" : "Complete"}
                           </button>
                           <button
-                            onClick={() => handleEditTask(task._id)}
+                            onClick={() => handleEditTask(task, index)}
                             className="hover:bg-gray-700/50 px-3 py-1 rounded text-left whitespace-nowrap"
                           >
                             Edit Task
