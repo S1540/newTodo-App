@@ -13,6 +13,7 @@ const Main = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(null);
   const [editIndex, setEditIndex] = useState(null);
   const [editID, setEditID] = useState(null);
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -20,6 +21,12 @@ const Main = () => {
     }, 1000);
     return () => clearInterval(timer);
   });
+
+  useEffect(() => {
+    setTimeout(() => {
+      setStatus("");
+    }, 2000);
+  }, [status]);
 
   const handleAddTask = async () => {
     if (task && date) {
@@ -35,10 +42,9 @@ const Main = () => {
           }
         );
         data = await response.json();
-        console.log(data);
-
-        setTasks(tasks.map((t) => (t._id === editID ? data : t)));
+        setTasks(tasks.map((t) => (t._id === editID ? data.data : t)));
         setEditID(null);
+        setStatus(data.message);
       } else {
         // Add new task
         response = await fetch("http://localhost:5000/api/add-task", {
@@ -47,19 +53,26 @@ const Main = () => {
           body: JSON.stringify({ task, date }),
         });
         data = await response.json();
-
-        setTasks([...tasks, data]);
+        console.log(data.message);
+        setTasks([...tasks, data.data]);
       }
-
+      setStatus(data.message);
       setTask("");
       setDate("");
     }
   };
 
-  const handleDeleteTask = (deleteIndex) => {
-    setTasks((prevtasks) =>
-      prevtasks.filter((task, index) => index !== deleteIndex)
+  const handleDeleteTask = async (_id) => {
+    const deleteItem = await fetch(
+      `http://localhost:5000/api/delete-task/${_id}`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      }
     );
+    const data = await deleteItem.json();
+    setTasks((prev) => prev.filter((item) => item._id !== _id));
+    setStatus(data.message);
   };
 
   const handleComplete = (index) => {
@@ -164,10 +177,17 @@ const Main = () => {
                   <span>Clear All</span>
                 </button>
               </div>
+              <div
+                className={`bg-green-600/50 py-1 rounded-md text-center ${
+                  status ? "block" : "hidden"
+                }`}
+              >
+                <p>{status}</p>
+              </div>
             </div>
 
             {/* Stats or Additional Info */}
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3 ">
               <div className="flex-1 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg p-4 border border-green-500/20">
                 <p className="text-xs text-gray-400 mb-1">Completed</p>
                 <p className="text-2xl font-bold text-green-400">
@@ -213,7 +233,7 @@ const Main = () => {
                   </li>
                   <div className="flex justify-between relative">
                     <button
-                      onClick={() => handleDeleteTask(index)}
+                      onClick={() => handleDeleteTask(task._id)}
                       className="bg-red-600 backdrop-blur-md border border-red-400/30 text-white flex items-center justify-center rounded-full w-10 h-10 py-1 px-1 hover:scale-110 active:scale-80 transition-all duration-300 ease-in-out cursor-pointer"
                     >
                       <Trash2 size={30} />
